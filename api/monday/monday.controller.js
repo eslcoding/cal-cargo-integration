@@ -8,6 +8,7 @@ const axios = require("axios");
 // const mondayService = require("./monday.service");
 let isOn = false;
 async function getInter(req, res) {
+  console.log(`isOn`, isOn);
   if (isOn) res.end();
   isOn = true;
   console.log("hi");
@@ -16,11 +17,11 @@ async function getInter(req, res) {
     const { shortLivedToken } = req.session;
     const { boardId, itemId } = body.payload.inboundFieldValues;
     await mondayService.getInter(shortLivedToken, boardId, itemId);
+    console.log("END");
     res.end();
   } catch (err) {
     console.log("err: ", err);
   } finally {
-    isOn = false;
     res.end();
   }
 }
