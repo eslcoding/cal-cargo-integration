@@ -14,10 +14,11 @@ async function getInter(req, res) {
   console.log("hi");
   const body = req.body;
   try {
+    console.log("integration START");
     const { shortLivedToken } = req.session;
     const { boardId, itemId } = body.payload.inboundFieldValues;
     await mondayService.getInter(shortLivedToken, boardId, itemId);
-    console.log("END");
+    console.log("integration END");
     res.end();
   } catch (err) {
     console.log("err: ", err);
