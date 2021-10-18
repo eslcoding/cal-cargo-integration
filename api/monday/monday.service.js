@@ -90,18 +90,20 @@ async function getTicketData(itemId, groupId) {
   );
 
   const elRowsTds = elRows.map((row, i) => {
-    return Array.from(row.querySelectorAll("td")).map((td) => td.textContent);
+    return Array.from(row.querySelectorAll("td")).map((td) =>
+      td.textContent.trim()
+    );
   });
   console.log(`elRowsTds -> elRowsTds`, elRowsTds);
 
   const bodyObj = {
-    person: elRowsTds[0][1].trim(),
-    role: elRowsTds[1][0].trim(),
-    mobile: elRowsTds[2][1].trim(),
-    phone: elRowsTds[3][1].trim(),
-    email: elRowsTds[4][1].trim(),
-    address: `${elRowsTds[2][2].trim()}, ${elRowsTds[3][2].trim()}`,
-    "company name": elRowsTds[4][2].split(".")[1].trim(),
+    person: elRowsTds[0][1],
+    role: elRowsTds[1][0],
+    mobile: elRowsTds[2][1],
+    phone: elRowsTds[3][1],
+    email: elRowsTds[4][1],
+    address: `${elRowsTds[2][2]}, ${elRowsTds[3][2]}`,
+    "company name": elRowsTds[4][2].split(".")[1],
     date: createdAt,
   };
   console.log(`getTicketData -> bodyObj`, bodyObj);

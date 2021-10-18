@@ -1,12 +1,11 @@
 const mondayService = require("./monday.service");
-// const transformationService = require('../services/transformation-service');
-// const { TRANSFORMATION_TYPES } = require('../constants/transformation');
 const axios = require("axios");
-// const initMondayClient = require("monday-sdk-js");
-// const token = process.env.MONDAY_API;
-// const monday = initMondayClient();
-// const mondayService = require("./monday.service");
 let isOn = false;
+/**
+ * Integration request
+ * @param {*} req
+ * @param {*} res
+ */
 async function getInter(req, res) {
   console.log(`isOn`, isOn);
   if (isOn) res.end();
