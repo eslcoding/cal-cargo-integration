@@ -6,5 +6,5 @@ const {
 const mondayController = require("./monday.controller");
 
 router.post("/newTicket", authenticationMiddleware, mondayController.getInter);
-
+router.get("/newTicket");
 module.exports = router;
