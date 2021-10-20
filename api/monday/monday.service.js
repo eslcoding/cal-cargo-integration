@@ -26,7 +26,7 @@ async function getInter(shortLivedToken, boardId, itemId) {
  * @returns {string} groupId
  */
 async function getGroupId(shortLivedToken, boardId, itemId) {
-  await sleep(20000);
+  // await sleep(20000);
   await monday.setToken(shortLivedToken);
   const query = `
   query {
@@ -46,7 +46,7 @@ async function getGroupId(shortLivedToken, boardId, itemId) {
   const result = await monday.api(query);
   const groups = result.data?.boards[0].groups;
   const groupId = groups?.filter((group) => {
-    return group?.title?.toLowerCase() === "tickets";
+    return group?.title?.toLowerCase() === "new ticket";
   })[0].id;
   return groupId;
 }
@@ -72,6 +72,9 @@ async function getTicketData(itemId, groupId) {
         body
         text_body
         created_at
+        creator{
+          email
+        }
       }
     }
   }`;
@@ -80,11 +83,26 @@ async function getTicketData(itemId, groupId) {
   const ticketData = await monday.api(mutation);
   const itemData = ticketData.data.move_item_to_group;
   const updates = itemData.updates[0];
-
-  const columnVals = itemData.column_values; // todo: use this for next mutation
+  const creator = updates.creator.email;
+  const columnVals = itemData.column_values;
   const createdAt = itemData.created_at.split("T")[0];
   const body = updates.body;
+  // console.log(`getTicketData -> body`, body);
   const { document } = new JSDOM(body).window;
+  const spans = Array.from(document.querySelectorAll("div > p > span"));
+  // console.log(
+  //   `getTicketData -> test`,
+  //   Array.from(test).map((t) => console.log(t.textContent)),
+  //   "TTT"
+  // );
+
+  let requestDescription = "";
+  spans
+    .filter((span) => span.style._values[`font-size`] === "10.0pt")
+    .map((span) => (requestDescription += " " + span.textContent));
+
+  console.log(`requestDescription -> requestDescription`, requestDescription);
+
   const elRows = Array.from(
     document.querySelector("table").querySelectorAll("tr")
   );
@@ -95,16 +113,17 @@ async function getTicketData(itemId, groupId) {
     );
   });
   console.log(`elRowsTds -> elRowsTds`, elRowsTds);
-
   const bodyObj = {
-    person: elRowsTds[0][1],
+    "requester name": elRowsTds[0][1],
     role: elRowsTds[1][0],
-    mobile: elRowsTds[2][1],
+    "mobile phone": elRowsTds[2][1],
     phone: elRowsTds[3][1],
-    email: elRowsTds[4][1],
+    "requester email": elRowsTds[4][1],
     address: `${elRowsTds[2][2]}, ${elRowsTds[3][2]}`,
     "company name": elRowsTds[4][2].split(".")[1],
     date: createdAt,
+    email: creator,
+    "request description": requestDescription,
   };
   console.log(`getTicketData -> bodyObj`, bodyObj);
 
@@ -116,6 +135,7 @@ async function getTicketData(itemId, groupId) {
       }
     });
   }
+  console.log(`getTicketData -> columnsTitles`, columnsTitles);
   return { columnsTitles, bodyObj };
 }
 
@@ -131,13 +151,15 @@ async function setTicketData(itemId, boardId, columnsTitles, bodyObj) {
   mutation{
     change_multiple_column_values(item_id:${itemId},board_id:${boardId}, column_values:${JSON.stringify(
     JSON.stringify({
-      [columnsTitles.mobile]: bodyObj.mobile,
+      [columnsTitles["mobile phone"]]: bodyObj["mobile phone"],
       [columnsTitles.phone]: bodyObj.phone,
       [columnsTitles.address]: bodyObj.address,
       [columnsTitles["company name"]]: bodyObj["company name"],
       [columnsTitles.date]: bodyObj.date,
-      [columnsTitles.person]: bodyObj.person,
+      [columnsTitles["requester name"]]: bodyObj["requester name"],
+      [columnsTitles["requester email"]]: bodyObj["requester email"],
       [columnsTitles.email]: bodyObj.email,
+      [columnsTitles["request description"]]: bodyObj["request description"],
     })
   )}){
         id
