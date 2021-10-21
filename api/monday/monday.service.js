@@ -89,7 +89,12 @@ async function getTicketData(itemId, groupId) {
   const body = updates.body;
   // console.log(`getTicketData -> body`, body);
   const { document } = new JSDOM(body).window;
-  const spans = Array.from(document.querySelectorAll("div > p > span"));
+  let filteredBody = body.split("<table")[0];
+  filteredBody += "</div>";
+  const filteredDocument = new JSDOM(filteredBody).window.document;
+  console.log(`getTicketData -> filteredDocument`, filteredDocument);
+
+  const spans = Array.from(filteredDocument.querySelectorAll("div > p > span"));
   // console.log(
   //   `getTicketData -> test`,
   //   Array.from(test).map((t) => console.log(t.textContent)),
@@ -98,11 +103,10 @@ async function getTicketData(itemId, groupId) {
 
   let requestDescription = "";
   spans
-    .filter((span) => span.style._values[`font-size`] === "10.0pt")
+    // .filter((span) => span.style._values[`font-size`] === "10.0pt")
     .map((span) => (requestDescription += " " + span.textContent));
 
   console.log(`requestDescription -> requestDescription`, requestDescription);
-
   const elRows = Array.from(
     document.querySelector("table").querySelectorAll("tr")
   );
