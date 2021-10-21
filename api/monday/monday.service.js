@@ -87,50 +87,47 @@ async function getTicketData(itemId, groupId) {
   const columnVals = itemData.column_values;
   const createdAt = itemData.created_at.split("T")[0];
   const body = updates.body;
-  // console.log(`getTicketData -> body`, body);
   const { document } = new JSDOM(body).window;
   let filteredBody = body.split("<table")[0];
-  filteredBody += "</div>";
+  filteredBody += body.includes("<table") ? "</div>" : "";
   const filteredDocument = new JSDOM(filteredBody).window.document;
-  console.log(`getTicketData -> filteredDocument`, filteredDocument);
 
   const spans = Array.from(filteredDocument.querySelectorAll("div > p > span"));
-  // console.log(
-  //   `getTicketData -> test`,
-  //   Array.from(test).map((t) => console.log(t.textContent)),
-  //   "TTT"
-  // );
-
   let requestDescription = "";
-  spans
-    // .filter((span) => span.style._values[`font-size`] === "10.0pt")
-    .map((span) => (requestDescription += " " + span.textContent));
+  spans.map((span) => (requestDescription += " " + span.textContent));
 
-  console.log(`requestDescription -> requestDescription`, requestDescription);
-  const elRows = Array.from(
-    document.querySelector("table").querySelectorAll("tr")
-  );
-
-  const elRowsTds = elRows.map((row, i) => {
-    return Array.from(row.querySelectorAll("td")).map((td) =>
-      td.textContent.trim()
+  let bodyObj = {};
+  if (body.includes("<table")) {
+    const elRows = Array.from(
+      document.querySelector("table").querySelectorAll("tr")
     );
-  });
-  console.log(`elRowsTds -> elRowsTds`, elRowsTds);
-  const bodyObj = {
-    "requester name": elRowsTds[0][1],
-    role: elRowsTds[1][0],
-    "mobile phone": elRowsTds[2][1],
-    phone: elRowsTds[3][1],
-    "requester email": elRowsTds[4][1],
-    address: `${elRowsTds[2][2]}, ${elRowsTds[3][2]}`,
-    "company name": elRowsTds[4][2].split(".")[1],
-    date: createdAt,
-    email: creator,
-    "request description": requestDescription,
-  };
-  console.log(`getTicketData -> bodyObj`, bodyObj);
 
+    const elRowsTds = elRows.map((row) => {
+      return Array.from(row.querySelectorAll("td")).map((td) =>
+        td.textContent.trim()
+      );
+    });
+    console.log(`elRowsTds -> elRowsTds`, elRowsTds);
+    bodyObj = {
+      "requester name": elRowsTds[0][1],
+      role: elRowsTds[1][0],
+      "mobile phone": elRowsTds[2][1],
+      phone: elRowsTds[3][1],
+      "requester email": elRowsTds[4][1],
+      address: `${elRowsTds[2][2]}, ${elRowsTds[3][2]}`,
+      "company name": elRowsTds[4][2].split(".")[1],
+      date: createdAt,
+      email: creator,
+      "request description": requestDescription,
+    };
+  } else {
+    console.log(`getTicketData -> requestDescription`, requestDescription);
+    bodyObj = {
+      date: createdAt,
+      email: creator,
+      "request description": requestDescription,
+    };
+  }
   let columnsTitles = {};
   for (let key in bodyObj) {
     columnVals.forEach((column) => {
@@ -139,7 +136,6 @@ async function getTicketData(itemId, groupId) {
       }
     });
   }
-  console.log(`getTicketData -> columnsTitles`, columnsTitles);
   return { columnsTitles, bodyObj };
 }
 
@@ -155,15 +151,15 @@ async function setTicketData(itemId, boardId, columnsTitles, bodyObj) {
   mutation{
     change_multiple_column_values(item_id:${itemId},board_id:${boardId}, column_values:${JSON.stringify(
     JSON.stringify({
+      [columnsTitles["requester email"]]: bodyObj["requester email"],
+      [columnsTitles.email]: bodyObj.email,
+      [columnsTitles["request description"]]: bodyObj["request description"],
       [columnsTitles["mobile phone"]]: bodyObj["mobile phone"],
       [columnsTitles.phone]: bodyObj.phone,
       [columnsTitles.address]: bodyObj.address,
       [columnsTitles["company name"]]: bodyObj["company name"],
       [columnsTitles.date]: bodyObj.date,
       [columnsTitles["requester name"]]: bodyObj["requester name"],
-      [columnsTitles["requester email"]]: bodyObj["requester email"],
-      [columnsTitles.email]: bodyObj.email,
-      [columnsTitles["request description"]]: bodyObj["request description"],
     })
   )}){
         id
