@@ -37,7 +37,6 @@ async function authenticationMiddleware(req, res, next) {
       authorization,
       process.env.MONDAY_SIGNING_SECRET
     );
-    console.log("🚀 ~ accountId", accountId, "userId", userId);
     req.session = { accountId, userId, backToUrl, shortLivedToken };
     next();
   } catch (err) {

@@ -14,19 +14,19 @@ const { JSDOM } = require("jsdom");
 
 async function getInter(shortLivedToken, boardId, itemId) {
   const groupId = await getGroupId(shortLivedToken, boardId, itemId);
-  const { columnsTitles, bodyObj } = await getTicketData(itemId, groupId);
-  await setTicketData(itemId, boardId, columnsTitles, bodyObj);
+  const { columnsIds, bodyObj } = await getTicketData(itemId, groupId);
+  await setTicketData(itemId, boardId, columnsIds, bodyObj);
   return;
 }
 /**
  * Gets groupId by query
- * @param {*} shortLivedToken
- * @param {*} boardId
- * @param {*} itemId
+ * @param {string} shortLivedToken
+ * @param {string} boardId
+ * @param {string} itemId
  * @returns {string} groupId
  */
 async function getGroupId(shortLivedToken, boardId, itemId) {
-  // await sleep(20000);
+  await sleep(30000);
   await monday.setToken(shortLivedToken);
   const query = `
   query {
@@ -37,7 +37,7 @@ async function getGroupId(shortLivedToken, boardId, itemId) {
       }
       name
       items (ids:${itemId}) {
-        name 
+        name
       }
     }
   }
@@ -54,9 +54,9 @@ async function getGroupId(shortLivedToken, boardId, itemId) {
  * Gets item's data, moves it to tickets group and collects and parses data from item's updates
  * @param {string} itemId
  * @param {string} groupId
- * @constant {object} columnsTitles
+ * @constant {object} columnsIds
  * @constant {object} bodyObj
- * @returns {object} {columnsTitles, bodyObj}
+ * @returns {object} {columnsIds, bodyObj}
  */
 async function getTicketData(itemId, groupId) {
   const mutation = `
@@ -82,7 +82,7 @@ async function getTicketData(itemId, groupId) {
 
   const ticketData = await monday.api(mutation);
   const itemData = ticketData.data.move_item_to_group;
-  const updates = itemData.updates[0];
+  const updates = itemData.updates[1];
   const creator = updates.creator.email;
   const columnVals = itemData.column_values;
   const createdAt = itemData.created_at.split("T")[0];
@@ -94,7 +94,7 @@ async function getTicketData(itemId, groupId) {
 
   const spans = Array.from(filteredDocument.querySelectorAll("div > p > span"));
   let requestDescription = "";
-  spans.map((span) => (requestDescription += " " + span.textContent));
+  spans.forEach((span) => (requestDescription += " " + span.textContent));
 
   let bodyObj = {};
   if (body.includes("<table")) {
@@ -107,63 +107,85 @@ async function getTicketData(itemId, groupId) {
         td.textContent.trim()
       );
     });
+    let company = elRowsTds[4][2].split(".")[1];
+    switch (
+      company // todo: get all matching names
+    ) {
+      case "challenge-airlines":
+        company = "";
+        break;
+      case "challenge-group":
+        company = "";
+        break;
+      case "cal-cargo":
+        company = "";
+        break;
+    }
+    //TODO: get all companies names and transfer them to status columns
     console.log(`elRowsTds -> elRowsTds`, elRowsTds);
     bodyObj = {
-      "requester name": elRowsTds[0][1],
+      "Requester Name ↘️": elRowsTds[0][1],
       role: elRowsTds[1][0],
-      "mobile phone": elRowsTds[2][1],
+      "Mobile Phone  ↘️": elRowsTds[2][1],
       phone: elRowsTds[3][1],
-      "requester email": elRowsTds[4][1],
+      "Requester Email  ↘️": elRowsTds[4][1],
       address: `${elRowsTds[2][2]}, ${elRowsTds[3][2]}`,
-      "company name": elRowsTds[4][2].split(".")[1],
-      date: createdAt,
-      email: creator,
-      "request description": requestDescription,
+      "Company  ↘️": company,
+      "Request Time": createdAt,
+      "Email External": creator,
+      "Request Description": requestDescription,
     };
+    console.log(`getTicketData -> bodyObj`, bodyObj);
   } else {
-    console.log(`getTicketData -> requestDescription`, requestDescription);
     bodyObj = {
-      date: createdAt,
-      email: creator,
-      "request description": requestDescription,
+      "Request Time": createdAt,
+      "Email External": creator,
+      "Request Description": requestDescription,
     };
   }
-  let columnsTitles = {};
+  let columnsIds = {};
   for (let key in bodyObj) {
     columnVals.forEach((column) => {
       if (column?.title?.toLowerCase() === key.toLowerCase()) {
-        columnsTitles[key] = column.id;
+        columnsIds[key] = column.id;
       }
     });
   }
-  return { columnsTitles, bodyObj };
+  console.log(`getTicketData -> columnsIds`, columnsIds);
+  return { columnsIds, bodyObj };
 }
 
 /**
  * Sets items data in monday
  * @param {string} itemId
  * @param {string} boardId
- * @param {object} columnsTitles
+ * @param {object} columnsIds
  * @param {object} bodyObj
  */
-async function setTicketData(itemId, boardId, columnsTitles, bodyObj) {
+async function setTicketData(itemId, boardId, columnsIds, bodyObj) {
+  console.log("big mutation", {
+    [columnsIds["Requester Email  ↘️"]]: bodyObj["Requester Email  ↘️"],
+    [columnsIds["Email External"]]: bodyObj["Email External"],
+    [columnsIds["Request Description"]]: bodyObj["Request Description"],
+    [columnsIds["Mobile Phone  ↘️"]]: bodyObj["Mobile Phone  ↘️"],
+    // [columnsIds["Company  ↘️"]]: bodyObj["Company  ↘️"],
+    [columnsIds["Request Time"]]: bodyObj["Request Time"],
+    [columnsIds["Requester Name ↘️"]]: bodyObj["Requester Name ↘️"],
+  });
   const mutation = `
   mutation{
     change_multiple_column_values(item_id:${itemId},board_id:${boardId}, column_values:${JSON.stringify(
     JSON.stringify({
-      [columnsTitles["requester email"]]: bodyObj["requester email"],
-      [columnsTitles.email]: bodyObj.email,
-      [columnsTitles["request description"]]: bodyObj["request description"],
-      [columnsTitles["mobile phone"]]: bodyObj["mobile phone"],
-      [columnsTitles.phone]: bodyObj.phone,
-      [columnsTitles.address]: bodyObj.address,
-      [columnsTitles["company name"]]: bodyObj["company name"],
-      [columnsTitles.date]: bodyObj.date,
-      [columnsTitles["requester name"]]: bodyObj["requester name"],
+      [columnsIds["Requester Email  ↘️"]]: bodyObj["Requester Email  ↘️"],
+      [columnsIds["Email External"]]: bodyObj["Email External"],
+      [columnsIds["Request Description"]]: bodyObj["Request Description"],
+      [columnsIds["Mobile Phone  ↘️"]]: bodyObj["Mobile Phone  ↘️"],
+      // [columnsIds["Company  ↘️"]]: bodyObj["Company  ↘️"],
+      [columnsIds["Request Time"]]: bodyObj["Request Time"],
+      [columnsIds["Requester Name ↘️"]]: bodyObj["Requester Name ↘️"],
     })
   )}){
         id
-        
       }
     }`;
   console.log(`setTicketData -> mutation`, mutation);
