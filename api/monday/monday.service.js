@@ -85,7 +85,7 @@ async function getTicketData(itemId, groupId) {
   const updates = itemData.updates[1];
   const creator = updates.creator.email;
   const columnVals = itemData.column_values;
-  const createdAt = itemData.created_at.split("T")[0];
+  const createdAt = itemData.created_at;
   const body = updates.body;
   const { document } = new JSDOM(body).window;
   let filteredBody = body.split("<table")[0];
@@ -128,18 +128,18 @@ async function getTicketData(itemId, groupId) {
       role: elRowsTds[1][0],
       "Mobile Phone  ↘️": elRowsTds[2][1],
       phone: elRowsTds[3][1],
-      "Requester Email  ↘️": elRowsTds[4][1],
+      "Requester Email  ↘️": { email: elRowsTds[4][1], text: elRowsTds[4][1] },
       address: `${elRowsTds[2][2]}, ${elRowsTds[3][2]}`,
       "Company  ↘️": company,
       "Request Time": createdAt,
-      "Email External": creator,
+      "Email External": { email: creator, text: creator },
       "Request Description": requestDescription,
     };
     console.log(`getTicketData -> bodyObj`, bodyObj);
   } else {
     bodyObj = {
       "Request Time": createdAt,
-      "Email External": creator,
+      "Email External": { email: creator, text: creator },
       "Request Description": requestDescription,
     };
   }
@@ -168,7 +168,6 @@ async function setTicketData(itemId, boardId, columnsIds, bodyObj) {
     [columnsIds["Email External"]]: bodyObj["Email External"],
     [columnsIds["Request Description"]]: bodyObj["Request Description"],
     [columnsIds["Mobile Phone  ↘️"]]: bodyObj["Mobile Phone  ↘️"],
-    // [columnsIds["Company  ↘️"]]: bodyObj["Company  ↘️"],
     [columnsIds["Request Time"]]: bodyObj["Request Time"],
     [columnsIds["Requester Name ↘️"]]: bodyObj["Requester Name ↘️"],
   });
@@ -180,8 +179,6 @@ async function setTicketData(itemId, boardId, columnsIds, bodyObj) {
       [columnsIds["Email External"]]: bodyObj["Email External"],
       [columnsIds["Request Description"]]: bodyObj["Request Description"],
       [columnsIds["Mobile Phone  ↘️"]]: bodyObj["Mobile Phone  ↘️"],
-      // [columnsIds["Company  ↘️"]]: bodyObj["Company  ↘️"],
-      [columnsIds["Request Time"]]: bodyObj["Request Time"],
       [columnsIds["Requester Name ↘️"]]: bodyObj["Requester Name ↘️"],
     })
   )}){
