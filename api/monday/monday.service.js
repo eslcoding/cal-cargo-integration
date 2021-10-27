@@ -82,22 +82,38 @@ async function getTicketData(itemId, groupId) {
 
   const ticketData = await monday.api(mutation);
   const itemData = ticketData.data.move_item_to_group;
-  const updates = itemData.updates[1];
+  const updates = itemData.updates.filter(
+    // (update) => console.log(update)
+    (update) => update?.creator?.email !== "monday@monday.com"
+  )[0];
+  console.log(`getTicketData -> updates`, updates);
+  console.log("isArray", Array.isArray(updates));
   const creator = updates.creator.email;
   const columnVals = itemData.column_values;
   const createdAt = itemData.created_at;
   const body = updates.body;
+  console.log(`getTicketData -> body`, body);
   const { document } = new JSDOM(body).window;
   let filteredBody = body.split("<table")[0];
   filteredBody += body.includes("<table") ? "</div>" : "";
   const filteredDocument = new JSDOM(filteredBody).window.document;
 
-  const spans = Array.from(filteredDocument.querySelectorAll("div > p > span"));
+  const spans = Array.from(document.querySelectorAll("div > p > span"));
+
+  // return;
   let requestDescription = "";
   spans.forEach((span) => (requestDescription += " " + span.textContent));
 
+  console.log(
+    document.querySelectorAll("span"),
+    //   .map((span) => {
+    //   return span.textContent === "Mobile";
+    // })
+    "!!!!!!!!!!!!!!!"
+  );
+
   let bodyObj = {};
-  if (body.includes("<table")) {
+  if (body.includes(`<table width="570"`)) {
     const elRows = Array.from(
       document.querySelector("table").querySelectorAll("tr")
     );
@@ -107,40 +123,30 @@ async function getTicketData(itemId, groupId) {
         td.textContent.trim()
       );
     });
-    let company = elRowsTds[4][2].split(".")[1];
-    switch (
-      company // todo: get all matching names
-    ) {
-      case "challenge-airlines":
-        company = "";
-        break;
-      case "challenge-group":
-        company = "";
-        break;
-      case "cal-cargo":
-        company = "";
-        break;
-    }
+
     //TODO: get all companies names and transfer them to status columns
     console.log(`elRowsTds -> elRowsTds`, elRowsTds);
     bodyObj = {
       "Requester Name ↘️": elRowsTds[0][1],
       role: elRowsTds[1][0],
-      "Mobile Phone  ↘️": elRowsTds[2][1],
-      phone: elRowsTds[3][1],
+      "Mobile Phone  ↘️": { phone: elRowsTds[2][1] },
+      "Zoom Ext  ↘️": { phone: elRowsTds[3][1] },
       "Requester Email  ↘️": { email: elRowsTds[4][1], text: elRowsTds[4][1] },
       address: `${elRowsTds[2][2]}, ${elRowsTds[3][2]}`,
-      "Company  ↘️": company,
+      "Company  ↘️": elRowsTds[5][2],
       "Request Time": createdAt,
       "Email External": { email: creator, text: creator },
       "Request Description": requestDescription,
     };
     console.log(`getTicketData -> bodyObj`, bodyObj);
   } else {
+    const mobile = "d";
     bodyObj = {
       "Request Time": createdAt,
       "Email External": { email: creator, text: creator },
       "Request Description": requestDescription,
+      "Mobile Phone  ↘️": mobile,
+      "Company  ↘️": "External/GSA",
     };
   }
   let columnsIds = {};
@@ -168,18 +174,21 @@ async function setTicketData(itemId, boardId, columnsIds, bodyObj) {
     [columnsIds["Email External"]]: bodyObj["Email External"],
     [columnsIds["Request Description"]]: bodyObj["Request Description"],
     [columnsIds["Mobile Phone  ↘️"]]: bodyObj["Mobile Phone  ↘️"],
-    [columnsIds["Request Time"]]: bodyObj["Request Time"],
     [columnsIds["Requester Name ↘️"]]: bodyObj["Requester Name ↘️"],
+    [columnsIds["Zoom Ext  ↘️"]]: bodyObj["Zoom Ext  ↘️"],
+    [columnsIds["Company  ↘️"]]: bodyObj["Company  ↘️"],
   });
   const mutation = `
   mutation{
     change_multiple_column_values(item_id:${itemId},board_id:${boardId}, column_values:${JSON.stringify(
     JSON.stringify({
-      [columnsIds["Requester Email  ↘️"]]: bodyObj["Requester Email  ↘️"],
       [columnsIds["Email External"]]: bodyObj["Email External"],
       [columnsIds["Request Description"]]: bodyObj["Request Description"],
+      [columnsIds["Requester Email  ↘️"]]: bodyObj["Requester Email  ↘️"],
       [columnsIds["Mobile Phone  ↘️"]]: bodyObj["Mobile Phone  ↘️"],
       [columnsIds["Requester Name ↘️"]]: bodyObj["Requester Name ↘️"],
+      [columnsIds["Zoom Ext  ↘️"]]: bodyObj["Zoom Ext  ↘️"],
+      [columnsIds["Company  ↘️"]]: bodyObj["Company  ↘️"],
     })
   )}){
         id
@@ -189,6 +198,7 @@ async function setTicketData(itemId, boardId, columnsIds, bodyObj) {
   await monday.api(mutation);
 }
 function sleep(ms = 0) {
+  console.log(`sleep ${ms / 1000}s`);
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
