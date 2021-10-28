@@ -4,30 +4,31 @@ const dbService = require("../../services/db.service");
 // const token = process.env.MONDAY_API;
 const monday = initMondayClient();
 const { JSDOM } = require("jsdom");
+let counter = 0;
 
 /**
  * parent function, activates all other function by flow
- * @param {string} shortLivedToken
+ * @param {string} token
  * @param {string} boardId
  * @param {string} itemId
  */
 
-async function getInter(shortLivedToken, boardId, itemId) {
-  const groupId = await getGroupId(shortLivedToken, boardId, itemId);
+async function getInter(token, boardId, itemId) {
+  const groupId = await getGroupId(token, boardId, itemId);
   const { columnsIds, bodyObj } = await getTicketData(itemId, groupId);
   await setTicketData(itemId, boardId, columnsIds, bodyObj);
   return;
 }
 /**
  * Gets groupId by query
- * @param {string} shortLivedToken
+ * @param {string} token
  * @param {string} boardId
  * @param {string} itemId
  * @returns {string} groupId
  */
-async function getGroupId(shortLivedToken, boardId, itemId) {
-  await sleep(30000);
-  await monday.setToken(shortLivedToken);
+async function getGroupId(token, boardId, itemId) {
+  await sleep(60000);
+  await monday.setToken(token);
   const query = `
   query {
     boards(ids:${boardId}) {
@@ -87,6 +88,15 @@ async function getTicketData(itemId, groupId) {
     (update) => update?.creator?.email !== "monday@monday.com"
   )[0];
   console.log(`getTicketData -> updates`, updates);
+  if (!updates) {
+    if (counter <= 7) {
+      counter++;
+      await sleep(10000);
+      return getTicketData(itemId, groupId);
+    } else {
+      return;
+    }
+  }
   console.log("isArray", Array.isArray(updates));
   const creator = updates.creator.email;
   const columnVals = itemData.column_values;
@@ -98,22 +108,14 @@ async function getTicketData(itemId, groupId) {
   filteredBody += body.includes("<table") ? "</div>" : "";
   const filteredDocument = new JSDOM(filteredBody).window.document;
 
-  const spans = Array.from(document.querySelectorAll("div > p > span"));
+  const spans = Array.from(filteredDocument.querySelectorAll("div > p > span"));
 
   // return;
   let requestDescription = "";
   spans.forEach((span) => (requestDescription += " " + span.textContent));
 
-  console.log(
-    document.querySelectorAll("span"),
-    //   .map((span) => {
-    //   return span.textContent === "Mobile";
-    // })
-    "!!!!!!!!!!!!!!!"
-  );
-
   let bodyObj = {};
-  if (body.includes(`<table width="570"`)) {
+  if (body.includes(`<table`)) {
     const elRows = Array.from(
       document.querySelector("table").querySelectorAll("tr")
     );
@@ -140,7 +142,7 @@ async function getTicketData(itemId, groupId) {
     };
     console.log(`getTicketData -> bodyObj`, bodyObj);
   } else {
-    const mobile = "d";
+    const mobile = "0000";
     bodyObj = {
       "Request Time": createdAt,
       "Email External": { email: creator, text: creator },
