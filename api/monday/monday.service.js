@@ -31,13 +31,13 @@ async function getGroupId(token, boardId, itemId) {
   await monday.setToken(token);
   const query = `
   query {
-    boards(ids:${boardId}) {
+    boards(ids: ${boardId}) {
+      name
       groups{
         title
         id
       }
-      name
-      items (ids:${itemId}) {
+      items (ids: ${itemId}) {
         name
       }
     }
@@ -45,10 +45,12 @@ async function getGroupId(token, boardId, itemId) {
   `;
   console.log(`getGroupId -> query`, query);
   const result = await monday.api(query);
-  const groups = result.data?.boards[0].groups;
-  const groupId = groups?.filter((group) => {
+  console.log(`getGroupId -> result`, result);
+  const groups = result.data?.boards[0]?.groups;
+  let groupId = groups?.filter((group) => {
     return group?.title?.toLowerCase() === "new ticket";
   })[0].id;
+  if (groupId === undefined) groupId = "topics";
   return groupId;
 }
 /**
@@ -62,7 +64,9 @@ async function getGroupId(token, boardId, itemId) {
 async function getTicketData(itemId, groupId) {
   const mutation = `
   mutation{
-    move_item_to_group(item_id: ${itemId}, group_id:${groupId}){
+    move_item_to_group(item_id: ${itemId}, group_id: ${JSON.stringify(
+    groupId
+  )}){
       created_at
       column_values{
         id
@@ -82,12 +86,13 @@ async function getTicketData(itemId, groupId) {
   console.log(`getTicketData -> mutation`, mutation);
 
   const ticketData = await monday.api(mutation);
+  console.log(`getTicketData -> ticketData`, ticketData);
   const itemData = ticketData.data.move_item_to_group;
   const updates = itemData.updates.filter(
     // (update) => console.log(update)
     (update) => update?.creator?.email !== "monday@monday.com"
   )[0];
-  console.log(`getTicketData -> updates`, updates);
+  // console.log(`getTicketData -> updates`, updates);
   if (!updates) {
     if (counter <= 7) {
       counter++;
@@ -97,12 +102,12 @@ async function getTicketData(itemId, groupId) {
       return;
     }
   }
-  console.log("isArray", Array.isArray(updates));
+  // console.log("isArray", Array.isArray(updates));
   const creator = updates.creator.email;
   const columnVals = itemData.column_values;
   const createdAt = itemData.created_at;
   const body = updates.body;
-  console.log(`getTicketData -> body`, body);
+  // console.log(`getTicketData -> body`, body);
   const { document } = new JSDOM(body).window;
   let filteredBody = body.split("<table")[0];
   filteredBody += body.includes("<table") ? "</div>" : "";
@@ -126,7 +131,6 @@ async function getTicketData(itemId, groupId) {
       );
     });
 
-    //TODO: get all companies names and transfer them to status columns
     console.log(`elRowsTds -> elRowsTds`, elRowsTds);
     bodyObj = {
       "Requester Name ↘️": elRowsTds[0][1],
@@ -182,7 +186,7 @@ async function setTicketData(itemId, boardId, columnsIds, bodyObj) {
   });
   const mutation = `
   mutation{
-    change_multiple_column_values(item_id:${itemId},board_id:${boardId}, column_values:${JSON.stringify(
+    change_multiple_column_values(item_id: ${itemId},board_id: ${boardId}, column_values: ${JSON.stringify(
     JSON.stringify({
       [columnsIds["Email External"]]: bodyObj["Email External"],
       [columnsIds["Request Description"]]: bodyObj["Request Description"],

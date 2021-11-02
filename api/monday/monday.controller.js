@@ -1,17 +1,14 @@
 const mondayService = require("./monday.service");
 const axios = require("axios");
 require("dotenv").config();
-let isOn = false;
 /**
  * Integration request
  * @param {*} req
  * @param {*} res
  */
 async function getInter(req, res) {
-  console.log(`isOn`, isOn);
-  if (isOn) res.end();
-  isOn = true;
   console.log("hi");
+  // res.end();
   const body = req.body;
   try {
     console.log("integration START");
