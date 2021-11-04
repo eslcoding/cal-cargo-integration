@@ -27,7 +27,7 @@ async function getInter(token, boardId, itemId) {
  * @returns {string} groupId
  */
 async function getGroupId(token, boardId, itemId) {
-  await sleep(60000);
+  await sleep(60000); 
   await monday.setToken(token);
   const query = `
   query {
@@ -152,7 +152,7 @@ async function getTicketData(itemId, groupId) {
       "Email External": { email: creator, text: creator },
       "Request Description": requestDescription,
       "Mobile Phone  ↘️": mobile,
-      "Company  ↘️": "External/GSA",
+      "Company  ↘️": "External / GSA",
     };
   }
   let columnsIds = {};
@@ -176,10 +176,10 @@ async function getTicketData(itemId, groupId) {
  */
 async function setTicketData(itemId, boardId, columnsIds, bodyObj) {
   console.log("big mutation", {
-    [columnsIds["Requester Email  ↘️"]]: bodyObj["Requester Email  ↘️"],
     [columnsIds["Email External"]]: bodyObj["Email External"],
     [columnsIds["Request Description"]]: bodyObj["Request Description"],
     [columnsIds["Mobile Phone  ↘️"]]: bodyObj["Mobile Phone  ↘️"],
+    [columnsIds["Requester Email  ↘️"]]: bodyObj["Requester Email  ↘️"],
     [columnsIds["Requester Name ↘️"]]: bodyObj["Requester Name ↘️"],
     [columnsIds["Zoom Ext  ↘️"]]: bodyObj["Zoom Ext  ↘️"],
     [columnsIds["Company  ↘️"]]: bodyObj["Company  ↘️"],
@@ -188,10 +188,10 @@ async function setTicketData(itemId, boardId, columnsIds, bodyObj) {
   mutation{
     change_multiple_column_values(item_id: ${itemId},board_id: ${boardId}, column_values: ${JSON.stringify(
     JSON.stringify({
-      [columnsIds["Email External"]]: bodyObj["Email External"],
       [columnsIds["Request Description"]]: bodyObj["Request Description"],
       [columnsIds["Requester Email  ↘️"]]: bodyObj["Requester Email  ↘️"],
       [columnsIds["Mobile Phone  ↘️"]]: bodyObj["Mobile Phone  ↘️"],
+      [columnsIds["Email External"]]: bodyObj["Email External"],
       [columnsIds["Requester Name ↘️"]]: bodyObj["Requester Name ↘️"],
       [columnsIds["Zoom Ext  ↘️"]]: bodyObj["Zoom Ext  ↘️"],
       [columnsIds["Company  ↘️"]]: bodyObj["Company  ↘️"],
@@ -201,7 +201,8 @@ async function setTicketData(itemId, boardId, columnsIds, bodyObj) {
       }
     }`;
   console.log(`setTicketData -> mutation`, mutation);
-  await monday.api(mutation);
+  let res2 = await monday.api(mutation);
+  console.log(`setTicketData -> let res2`, res2)
 }
 function sleep(ms = 0) {
   console.log(`sleep ${ms / 1000}s`);
