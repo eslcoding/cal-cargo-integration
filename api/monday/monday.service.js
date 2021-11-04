@@ -15,6 +15,7 @@ let counter = 0;
 
 async function getInter(token, boardId, itemId) {
   const groupId = await getGroupId(token, boardId, itemId);
+  if (!groupId) return
   const { columnsIds, bodyObj } = await getTicketData(itemId, groupId);
   await setTicketData(itemId, boardId, columnsIds, bodyObj);
   return;
@@ -39,6 +40,9 @@ async function getGroupId(token, boardId, itemId) {
       }
       items (ids: ${itemId}) {
         name
+        group{
+          id
+        }
       }
     }
   }
@@ -50,6 +54,8 @@ async function getGroupId(token, boardId, itemId) {
   let groupId = groups?.filter((group) => {
     return group?.title?.toLowerCase() === "new ticket";
   })[0].id;
+  const thisGroupId = result.data.boards[0].items[0].group.id
+  if (thisGroupId !== "emailed_items33271") return
   if (groupId === undefined) groupId = "topics";
   return groupId;
 }
