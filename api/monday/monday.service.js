@@ -143,7 +143,7 @@ async function getTicketData(itemId, groupId) {
     bodyObj = {
       "Requester Name ↘️": elRowsTds[0][1],
       role: elRowsTds[1][0],
-      "Mobile Phone  ↘️": { phone: elRowsTds[2][1] },
+      "Mobile Phone   ↘️": { phone: elRowsTds[2][1] },
       "Zoom Ext  ↘️": { phone: elRowsTds[3][1] },
       "Requester Email  ↘️": { email: elRowsTds[4][1], text: elRowsTds[4][1] },
       address: `${elRowsTds[2][2]}, ${elRowsTds[3][2]}`,
@@ -159,7 +159,7 @@ async function getTicketData(itemId, groupId) {
       "Request Time": createdAt,
       "Email External": { email: creator, text: creator },
       "Request Description": requestDescription,
-      "Mobile Phone  ↘️": mobile,
+      "Mobile Phone   ↘️": mobile,
       "Company  ↘️": "External / GSA",
     };
   }
@@ -186,7 +186,7 @@ async function setTicketData(itemId, boardId, columnsIds, bodyObj) {
   console.log("big mutation", {
     [columnsIds["Email External"]]: bodyObj["Email External"],
     [columnsIds["Request Description"]]: bodyObj["Request Description"],
-    [columnsIds["Mobile Phone  ↘️"]]: bodyObj["Mobile Phone  ↘️"],
+    [columnsIds["Mobile Phone   ↘️"]]: bodyObj["Mobile Phone   ↘️"],
     [columnsIds["Requester Email  ↘️"]]: bodyObj["Requester Email  ↘️"],
     [columnsIds["Requester Name ↘️"]]: bodyObj["Requester Name ↘️"],
     [columnsIds["Zoom Ext  ↘️"]]: bodyObj["Zoom Ext  ↘️"],
@@ -198,7 +198,7 @@ async function setTicketData(itemId, boardId, columnsIds, bodyObj) {
     JSON.stringify({
       [columnsIds["Request Description"]]: bodyObj["Request Description"],
       [columnsIds["Requester Email  ↘️"]]: bodyObj["Requester Email  ↘️"],
-      [columnsIds["Mobile Phone  ↘️"]]: bodyObj["Mobile Phone  ↘️"],
+      [columnsIds["Mobile Phone   ↘️"]]: bodyObj["Mobile Phone   ↘️"],
       [columnsIds["Email External"]]: bodyObj["Email External"],
       [columnsIds["Requester Name ↘️"]]: bodyObj["Requester Name ↘️"],
       [columnsIds["Zoom Ext  ↘️"]]: bodyObj["Zoom Ext  ↘️"],
