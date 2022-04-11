@@ -112,6 +112,7 @@ async function getTicketData(itemId, groupId) {
   // console.log("isArray", Array.isArray(updates));
   const creator = updates.creator.email;
   const columnVals = itemData.column_values;
+  console.log(`getTicketData -> columnVals important!!!!!`, columnVals);
   const createdAt = itemData.created_at;
   const body = updates.body;
   // console.log(`getTicketData -> body`, body);
