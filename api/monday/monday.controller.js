@@ -15,6 +15,7 @@ async function getInter(req, res) {
     const { shortLivedToken } = req.session;
     const token = process.env.MONDAY_API;
     const { boardId, itemId } = body.payload.inboundFieldValues;
+    // mondayService.getInter(token, boardId, itemId);
     await mondayService.getInter(token, boardId, itemId);
     console.log("integration END");
     res.end();

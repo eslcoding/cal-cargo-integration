@@ -15,7 +15,7 @@ let counter = 0;
 
 async function getInter(token, boardId, itemId) {
   const groupId = await getGroupId(token, boardId, itemId);
-  if (!groupId) return
+  if (!groupId) return;
   const { columnsIds, bodyObj } = await getTicketData(itemId, groupId);
   await setTicketData(itemId, boardId, columnsIds, bodyObj);
   return;
@@ -28,7 +28,7 @@ async function getInter(token, boardId, itemId) {
  * @returns {string} groupId
  */
 async function getGroupId(token, boardId, itemId) {
-  await sleep(60000); 
+  await sleep(60000);
   await monday.setToken(token);
   const query = `
   query {
@@ -50,12 +50,13 @@ async function getGroupId(token, boardId, itemId) {
   console.log(`getGroupId -> query`, query);
   const result = await monday.api(query);
   console.log(`getGroupId -> result`, result);
+  console.log(`getGroupId -> result`, result.data.boards[0]);
   const groups = result.data?.boards[0]?.groups;
   let groupId = groups?.filter((group) => {
     return group?.title?.toLowerCase() === "new ticket";
   })[0].id;
-  const thisGroupId = result.data.boards[0].items[0].group.id
-  if (thisGroupId !== "emailed_items33271") return
+  const thisGroupId = result.data.boards[0].items[0].group.id;
+  if (thisGroupId !== "emailed_items33271") return;
   if (groupId === undefined) groupId = "topics";
   return groupId;
 }
@@ -208,7 +209,7 @@ async function setTicketData(itemId, boardId, columnsIds, bodyObj) {
     }`;
   console.log(`setTicketData -> mutation`, mutation);
   let res2 = await monday.api(mutation);
-  console.log(`setTicketData -> let res2`, res2)
+  console.log(`setTicketData -> let res2`, res2);
 }
 function sleep(ms = 0) {
   console.log(`sleep ${ms / 1000}s`);
